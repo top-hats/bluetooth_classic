@@ -90,11 +90,11 @@ class BluetoothClassicPlugin: FlutterPlugin, MethodCallHandler, PluginRegistry.R
   }
 
   override fun onDetachedFromActivity() {
-    TODO("Not yet implemented")
+    //TODO("Not yet implemented")
   }
 
   override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-    TODO("Not yet implemented")
+    //TODO("Not yet implemented")
   }
 
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
@@ -102,7 +102,7 @@ class BluetoothClassicPlugin: FlutterPlugin, MethodCallHandler, PluginRegistry.R
   }
 
   override fun onDetachedFromActivityForConfigChanges() {
-    TODO("Not yet implemented")
+    //TODO("Not yet implemented")
   }
 
   private val receiver = object: BroadcastReceiver() {
