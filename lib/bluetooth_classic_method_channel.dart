@@ -11,15 +11,15 @@ class MethodChannelBluetoothClassic extends BluetoothClassicPlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel =
-      const MethodChannel('com.matteogassend/bluetooth_classic');
+  const MethodChannel('com.matteogassend/bluetooth_classic');
 
   /// The event channel used to receive discovered devices events
   final deviceDiscoveryChannel =
-      const EventChannel("com.matteogassend/bluetooth_classic/devices");
+  const EventChannel("com.matteogassend/bluetooth_classic/devices");
   final deviceStatusChannel =
-      const EventChannel("com.matteogassend/bluetooth_classic/status");
+  const EventChannel("com.matteogassend/bluetooth_classic/status");
   final deviceDataChannel =
-      const EventChannel("com.matteogassend/bluetooth_classic/read");
+  const EventChannel("com.matteogassend/bluetooth_classic/read");
 
   /// stream mapped to deviceDiscoveryChannel
   Stream<dynamic>? _deviceDiscoveryStream;
@@ -31,11 +31,20 @@ class MethodChannelBluetoothClassic extends BluetoothClassicPlatform {
   Stream<dynamic>? _deviceDataReceivedStream;
 
   /// user facing stream controller for device discovery
-  final StreamController<Device> discoveryStream = StreamController();
+  final StreamController<Device> discoveryStream = StreamController.broadcast();
 
-  final StreamController<int> statusStream = StreamController();
+  final StreamController<int> statusStream = StreamController.broadcast();
 
-  final StreamController<Uint8List> dataReceivedStream = StreamController();
+  final StreamController<Uint8List> dataReceivedStream = StreamController.broadcast();
+
+  /// stream mapped to deviceDiscoveryChannel
+  Stream<dynamic>? _deviceDiscoverySubscription;
+
+  /// stream mapped to deviceStatusChannel
+  Stream<dynamic>? _deviceStatusSubscription;
+
+  /// stream mapped to deviceDataChannel
+  Stream<dynamic>? _deviceDataReceivedSubscription;
 
   void _onDeviceDiscovered(Device device) {
     discoveryStream.add(device);
@@ -52,7 +61,7 @@ class MethodChannelBluetoothClassic extends BluetoothClassicPlatform {
   @override
   Future<String?> getPlatformVersion() async {
     final version =
-        await methodChannel.invokeMethod<String>('getPlatformVersion');
+    await methodChannel.invokeMethod<String>('getPlatformVersion');
     return version;
   }
 
@@ -72,7 +81,8 @@ class MethodChannelBluetoothClassic extends BluetoothClassicPlatform {
   Future<bool> startScan() async {
     var res = await methodChannel.invokeMethod<bool>("startDiscovery");
     _deviceDiscoveryStream = deviceDiscoveryChannel.receiveBroadcastStream();
-    _deviceDiscoveryStream!.listen((event) {
+    _deviceDiscoverySubscription?.cancel();
+    _deviceDiscoverySubscription = _deviceDiscoveryStream!.listen((event) {
       _onDeviceDiscovered(Device.fromMap(event));
     });
     return res!;
@@ -81,7 +91,10 @@ class MethodChannelBluetoothClassic extends BluetoothClassicPlatform {
   @override
   Future<bool> stopScan() async {
     var res = await methodChannel.invokeMethod<bool>("stopDiscovery");
+
+    _deviceDiscoverySubscription?.cancel();
     if (_deviceDiscoveryStream != null) {
+      _deviceDiscoveryStream?.cancel();
       _deviceDiscoveryStream = null;
     }
     return res!;
@@ -95,7 +108,7 @@ class MethodChannelBluetoothClassic extends BluetoothClassicPlatform {
   @override
   Future<bool> connect(String address, String serviceUUID) async {
     var res =
-        await methodChannel.invokeMethod<bool>("connect", <String, String>{
+    await methodChannel.invokeMethod<bool>("connect", <String, String>{
       "deviceId": address,
       "serviceUUID": serviceUUID,
     });
@@ -111,7 +124,8 @@ class MethodChannelBluetoothClassic extends BluetoothClassicPlatform {
   @override
   Stream<int> onDeviceStatusChanged() {
     _deviceStatusStream = deviceStatusChannel.receiveBroadcastStream();
-    _deviceStatusStream!.listen((event) {
+    _deviceStatusSubscription?.cancel();
+    _deviceStatusSubscription = _deviceStatusStream!.listen((event) {
       _onDeviceStatus(event);
     });
     return statusStream.stream;
@@ -120,7 +134,8 @@ class MethodChannelBluetoothClassic extends BluetoothClassicPlatform {
   @override
   Stream<Uint8List> onDeviceDataReceived() {
     _deviceDataReceivedStream = deviceDataChannel.receiveBroadcastStream();
-    _deviceDataReceivedStream!.listen((event) {
+    _deviceDataReceivedSubscription?.cancel();
+    _deviceDataReceivedSubscription = _deviceDataReceivedStream!.listen((event) {
       _onDeviceDataReceived(event);
     });
     return dataReceivedStream.stream;
