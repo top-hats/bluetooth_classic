@@ -94,7 +94,6 @@ class MethodChannelBluetoothClassic extends BluetoothClassicPlatform {
 
     _deviceDiscoverySubscription?.cancel();
     if (_deviceDiscoveryStream != null) {
-      _deviceDiscoveryStream?.cancel();
       _deviceDiscoveryStream = null;
     }
     return res!;
