@@ -31,6 +31,7 @@ import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry
 import java.io.IOException
 import java.util.UUID
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /** BluetoothClassicPlugin */
 class BluetoothClassicPlugin: FlutterPlugin, MethodCallHandler, PluginRegistry.RequestPermissionsResultListener, ActivityAware {
@@ -61,18 +62,30 @@ class BluetoothClassicPlugin: FlutterPlugin, MethodCallHandler, PluginRegistry.R
 
     private val inputStream = socket.inputStream
     private val outputStream = socket.outputStream
-    private val buffer: ByteArray = ByteArray(1024)
+    //private val buffer: ByteArray = ByteArray(1024)
     var readStream = true
     override fun run() {
       var numBytes: Int
+      var queue = ConcurrentLinkedQueue<ByteArray>()
       while (readStream) {
         try {
+          val buffer: ByteArray = ByteArray(1024)
           numBytes = inputStream.read(buffer)
-          android.util.Log.i("Bluetooth Read", "read $buffer")
-          Handler(Looper.getMainLooper()).post { publishBluetoothData(ByteArray(numBytes) { buffer[it] }) }
+          queue.offer(ByteArray(numBytes) {
+            buffer[it]
+          })
+          android.util.Log.i("Bluetooth Read", "read ${buffer.toString(Charsets.UTF_8)} queue:${queue}")
+          Handler(Looper.getMainLooper()).post {
+            do {
+              var b = queue.poll()
+              if (b != null) {
+                publishBluetoothData(b)
+              }
+            } while (b != null)
+          }
         } catch (e: IOException) {
           android.util.Log.e("Bluetooth Read", "input stream disconnected", e)
-          Handler(looper).post { publishBluetoothStatus(0) }
+          Handler(Looper.getMainLooper()).post { publishBluetoothStatus(0) }
           readStream = false
         }
       }
@@ -84,7 +97,7 @@ class BluetoothClassicPlugin: FlutterPlugin, MethodCallHandler, PluginRegistry.R
       } catch (e: IOException) {
         readStream = false
         android.util.Log.e("Bluetooth Write", "could not send data to other device", e)
-        Handler(looper).post { publishBluetoothStatus(0) }
+        Handler(Looper.getMainLooper()).post { publishBluetoothStatus(0) }
       }
     }
   }
