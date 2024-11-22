@@ -74,7 +74,9 @@ class BluetoothClassicPlugin: FlutterPlugin, MethodCallHandler, PluginRegistry.R
           queue.offer(ByteArray(numBytes) {
             buffer[it]
           })
-          android.util.Log.i("Bluetooth Read", "read ${buffer.toString(Charsets.UTF_8)} queue:${queue}")
+          android.util.Log.i("Bluetooth Read", "read ${(ByteArray(numBytes) {
+            buffer[it]
+          }).toString(Charsets.UTF_8)} queue:${queue} numBytes:${numBytes}")
           Handler(Looper.getMainLooper()).post {
             do {
               var b = queue.poll()
