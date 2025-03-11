@@ -10,16 +10,12 @@ import 'models/device.dart';
 class MethodChannelBluetoothClassic extends BluetoothClassicPlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
-  final methodChannel =
-  const MethodChannel('com.matteogassend/bluetooth_classic');
+  final methodChannel = const MethodChannel('com.matteogassend/bluetooth_classic');
 
   /// The event channel used to receive discovered devices events
-  final deviceDiscoveryChannel =
-  const EventChannel("com.matteogassend/bluetooth_classic/devices");
-  final deviceStatusChannel =
-  const EventChannel("com.matteogassend/bluetooth_classic/status");
-  final deviceDataChannel =
-  const EventChannel("com.matteogassend/bluetooth_classic/read");
+  final deviceDiscoveryChannel = const EventChannel("com.matteogassend/bluetooth_classic/devices");
+  final deviceStatusChannel = const EventChannel("com.matteogassend/bluetooth_classic/status");
+  final deviceDataChannel = const EventChannel("com.matteogassend/bluetooth_classic/read");
 
   /// stream mapped to deviceDiscoveryChannel
   Stream<dynamic>? _deviceDiscoveryStream;
@@ -60,8 +56,7 @@ class MethodChannelBluetoothClassic extends BluetoothClassicPlatform {
 
   @override
   Future<String?> getPlatformVersion() async {
-    final version =
-    await methodChannel.invokeMethod<String>('getPlatformVersion');
+    final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
     return version;
   }
 
@@ -106,8 +101,7 @@ class MethodChannelBluetoothClassic extends BluetoothClassicPlatform {
 
   @override
   Future<bool> connect(String address, String serviceUUID) async {
-    var res =
-    await methodChannel.invokeMethod<bool>("connect", <String, String>{
+    var res = await methodChannel.invokeMethod<bool>("connect", <String, String>{
       "deviceId": address,
       "serviceUUID": serviceUUID,
     });
@@ -142,8 +136,14 @@ class MethodChannelBluetoothClassic extends BluetoothClassicPlatform {
 
   @override
   Future<bool> write(String message) async {
+    var res = await methodChannel.invokeMethod<bool>("write", <String, String>{"message": message});
+    return res!;
+  }
+
+  @override
+  Future<bool> writeBinary(Uint8List message) async {
     var res = await methodChannel
-        .invokeMethod<bool>("write", <String, String>{"message": message});
+        .invokeMethod<bool>("writeBinary", <String, Uint8List>{"message": message});
     return res!;
   }
 }

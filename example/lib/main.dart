@@ -24,6 +24,7 @@ class _MyAppState extends State<MyApp> {
   bool _scanning = false;
   int _deviceStatus = Device.disconnected;
   Uint8List _data = Uint8List(0);
+
   @override
   void initState() {
     super.initState();
@@ -46,8 +47,8 @@ class _MyAppState extends State<MyApp> {
     // Platform messages may fail, so we use a try/catch PlatformException.
     // We also handle the message potentially returning null.
     try {
-      platformVersion = await _bluetoothClassicPlugin.getPlatformVersion() ??
-          'Unknown platform version';
+      platformVersion =
+          await _bluetoothClassicPlugin.getPlatformVersion() ?? 'Unknown platform version';
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
@@ -134,8 +135,8 @@ class _MyAppState extends State<MyApp> {
                 for (var device in _devices)
                   TextButton(
                       onPressed: () async {
-                        await _bluetoothClassicPlugin.connect(device.address,
-                            "00001101-0000-1000-8000-00805f9b34fb");
+                        await _bluetoothClassicPlugin.connect(
+                            device.address, "00001101-0000-1000-8000-00805f9b34fb");
                         setState(() {
                           _discoveredDevices = [];
                           _devices = [];
@@ -147,10 +148,7 @@ class _MyAppState extends State<MyApp> {
                 onPressed: _scan,
                 child: Text(_scanning ? "Stop Scan" : "Start Scan"),
               ),
-              ...[
-                for (var device in _discoveredDevices)
-                  Text(device.name ?? device.address)
-              ],
+              ...[for (var device in _discoveredDevices) Text(device.name ?? device.address)],
               Text("Received data: ${String.fromCharCodes(_data)}"),
             ],
           ),

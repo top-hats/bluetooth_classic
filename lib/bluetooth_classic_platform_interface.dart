@@ -55,8 +55,7 @@ abstract class BluetoothClassicPlatform extends PlatformInterface {
   }
 
   Stream<Uint8List> onDeviceDataReceived() {
-    throw UnimplementedError(
-        'onDeviceDataReceived() has not been implemented.');
+    throw UnimplementedError('onDeviceDataReceived() has not been implemented.');
   }
 
   Future<bool> connect(String address, String serviceUUID) {
@@ -69,5 +68,9 @@ abstract class BluetoothClassicPlatform extends PlatformInterface {
 
   Future<bool> write(String message) {
     throw UnimplementedError('write() has not been implemented.');
+  }
+
+  Future<bool> writeBinary(Uint8List message) {
+    throw UnimplementedError('writeBinary() has not been implemented.');
   }
 }
