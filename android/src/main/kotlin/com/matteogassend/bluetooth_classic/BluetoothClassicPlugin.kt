@@ -78,7 +78,7 @@ class BluetoothClassicPlugin : FlutterPlugin, MethodCallHandler,
                     queue.offer(ByteArray(numBytes) {
                         buffer[it]
                     })
-                    Log.i(
+                    Log.d(
                         "Bluetooth Read", "read ${
                             (ByteArray(numBytes) {
                                 buffer[it]
@@ -113,18 +113,22 @@ class BluetoothClassicPlugin : FlutterPlugin, MethodCallHandler,
     }
 
     override fun onDetachedFromActivity() {
+        Log.i("Bluetooth", "onDetachedFromActivity")
         //TODO("Not yet implemented")
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        Log.i("Bluetooth", "onReattachedToActivityForConfigChanges")
         //TODO("Not yet implemented")
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        Log.i("Bluetooth", "onAttachedToActivity")
         pluginActivity = binding.activity
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
+        Log.i("Bluetooth", "onDetachedFromActivityForConfigChanges")
         //TODO("Not yet implemented")
     }
 
@@ -150,7 +154,7 @@ class BluetoothClassicPlugin : FlutterPlugin, MethodCallHandler,
     }
 
     private fun publishBluetoothDevice(device: BluetoothDevice) {
-        Log.i("device_discovery", device.address)
+        Log.i("Bluetooth device_discovery", device.address)
         bluetoothDeviceChannelSink?.success(
             hashMapOf(
                 "address" to device.address,
@@ -212,7 +216,7 @@ class BluetoothClassicPlugin : FlutterPlugin, MethodCallHandler,
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
-        Log.i("method_call", call.method)
+        Log.i("Bluetooth method_call", call.method)
         when (call.method) {
             "getPlatformVersion" -> result.success("Android ${Build.VERSION.RELEASE}")
             "initPermissions" -> initPermissions(result)
@@ -233,7 +237,7 @@ class BluetoothClassicPlugin : FlutterPlugin, MethodCallHandler,
     }
 
     private fun write(result: Result, message: String) {
-        Log.i("write_handle", "inside write handle")
+        Log.d("Bluetooth write_handle", "inside write handle")
         if (thread != null) {
             thread!!.write(message.toByteArray())
             result.success(true)
@@ -243,7 +247,7 @@ class BluetoothClassicPlugin : FlutterPlugin, MethodCallHandler,
     }
 
     private fun writeBinary(result: Result, message: ByteArray) {
-        Log.i("writeBinar_handle", "inside write Binar handle")
+        Log.d("Bluetooth writeBinar_handle", "inside write Binar handle")
         if (thread != null) {
             thread!!.write(message)
             result.success(true)
@@ -253,6 +257,7 @@ class BluetoothClassicPlugin : FlutterPlugin, MethodCallHandler,
     }
 
     private fun disconnect(result: Result) {
+        Log.i("Bluetooth Disconnect", "Start")
         try {
             if (thread != null) {
                 thread?.readStream = false  // Stop reading data
@@ -283,28 +288,64 @@ class BluetoothClassicPlugin : FlutterPlugin, MethodCallHandler,
     }
 
     private fun connect(result: Result, deviceId: String, serviceUuid: String) {
+        Log.i("Bluetooth Connection", "Start")
+
+
         Thread {
             try {
                 Handler(Looper.getMainLooper()).post {
                     publishBluetoothStatus(1)
                 }
                 device = ba.getRemoteDevice(deviceId)
-                Log.i("Bluetooth Connection", "device found")
+                Log.i("Bluetooth Connection", "device found ${device != null}")
                 assert(device != null)
 
+
+                Log.i("Bluetooth Connection", "isDiscovering ${ba.isDiscovering}")
                 // Stop discovery to avoid interference
                 if (ba.isDiscovering) {
                     ba.cancelDiscovery()
                 }
 
+                Thread.sleep(10)
                 socket = device?.createRfcommSocketToServiceRecord(UUID.fromString(serviceUuid))
-                Log.i("Bluetooth Connection", "rfcommsocket found")
+                Log.i("Bluetooth Connection", "rfcommsocket found ${socket != null}")
                 assert(socket != null)
-                socket?.connect()
-                Log.i("Bluetooth Connection", "socket connected")
+                Thread.sleep(10)
+
+                var maxAttempts: Int = 5;
+                var retryIntervalMillis: Long = 1000;
+                var attempts = 0
+                while (attempts < maxAttempts && !(socket?.isConnected() ?: false)) {
+                    try {
+                        socket?.connect()
+                        Log.i("Bluetooth Connection", "socket connected attempts ${attempts}")
+                        break
+                    } catch (e: Exception) {
+                        Log.e(
+                            "Bluetooth Connection",
+                            "socket connected attempts ${attempts} failed: ${e.message}"
+                        )
+                        attempts++
+                        if (attempts < maxAttempts) {
+                            /// Wait before the next retry
+                            Thread.sleep(retryIntervalMillis)
+                        } else {
+                            /// If max attempts are reached, throw the exception
+                            throw e
+                        }
+                    }
+                }
+
+
+//                socket = device?.createRfcommSocketToServiceRecord(UUID.fromString(serviceUuid))
+//                Log.i("Bluetooth Connection", "rfcommsocket found ${socket != null}")
+//                assert(socket != null)
+//                socket?.connect()
+//                Log.i("Bluetooth Connection", "socket connected")
 
                 thread = ConnectedThread(socket!!)
-                Log.i("Bluetooth Connection", "thread created")
+                Log.i("Bluetooth Connection", "thread created ${thread != null}")
                 assert(thread != null)
                 thread!!.start()
 
@@ -329,14 +370,14 @@ class BluetoothClassicPlugin : FlutterPlugin, MethodCallHandler,
     }
 
     private fun startScan(result: Result) {
-        Log.i("start_scan", "scan started")
+        Log.i("Bluetooth start_scan", "scan started")
         application.registerReceiver(receiver, IntentFilter(BluetoothDevice.ACTION_FOUND))
         ba.startDiscovery()
         result.success(true)
     }
 
     private fun stopScan(result: Result) {
-        Log.i("stop_scan", "scan stopped")
+        Log.i("Bluetooth stop_scan", "scan stopped")
         ba.cancelDiscovery()
         result.success(true)
     }
@@ -370,13 +411,13 @@ class BluetoothClassicPlugin : FlutterPlugin, MethodCallHandler,
         permissionGranted = permissions.all {
             ContextCompat.checkSelfPermission(application, it) == PackageManager.PERMISSION_GRANTED
         }
-        Log.i("permission_check", "arePermissionsGranted: $permissionGranted")
+        Log.i("Bluetooth permission_check", "arePermissionsGranted: $permissionGranted")
     }
 
     private fun checkPermissions(application: Context) {
         arePermissionsGranted(application)
         if (!permissionGranted) {
-            Log.i("permission_check", "permissions not granted, asking")
+            Log.i("Bluetooth permission_check", "permissions not granted, asking")
             val permissions = mutableListOf(
                 Manifest.permission.BLUETOOTH,
                 Manifest.permission.BLUETOOTH_ADMIN,
@@ -402,7 +443,7 @@ class BluetoothClassicPlugin : FlutterPlugin, MethodCallHandler,
                 myPermissionCode
             )
         } else {
-            Log.i("permission_check", "permissions granted, continuing")
+            Log.i("Bluetooth permission_check", "permissions granted, continuing")
             completeCheckPermissions()
         }
     }
@@ -431,7 +472,10 @@ class BluetoothClassicPlugin : FlutterPlugin, MethodCallHandler,
             myPermissionCode -> {
                 permissionGranted =
                     grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
-                Log.i("permission_check", "onRequestPermissionsResult: $permissionGranted")
+                Log.i(
+                    "Bluetooth permission_check",
+                    "onRequestPermissionsResult: $permissionGranted"
+                )
                 completeCheckPermissions()
                 return true
             }
