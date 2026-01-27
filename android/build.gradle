@@ -8,22 +8,20 @@ allprojects {
     }
 }
 
-plugins {
-    id 'com.android.library'
-    id 'org.jetbrains.kotlin.android'
-}
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
 
 android {
-    compileSdk 36
+    compileSdkVersion  33
     namespace 'com.matteogassend.bluetooth_classic'
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = '11'
+        jvmTarget = '17'
     }
 
     sourceSets {
