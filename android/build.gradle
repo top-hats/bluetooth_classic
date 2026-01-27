@@ -12,7 +12,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion  33
+    compileSdkVersion  36
     namespace 'com.matteogassend.bluetooth_classic'
 
     compileOptions {
@@ -30,7 +30,7 @@ android {
     }
 
     defaultConfig {
-        minSdk 30
+        minSdk 32
     }
 
     dependencies {
